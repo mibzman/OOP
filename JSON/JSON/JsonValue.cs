@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace JSON
 {
@@ -16,7 +17,7 @@ namespace JSON
     public class JValue
     {
         public JType Type { get; private set; }
-        private JsonValue Value { get; set; }
+        internal JsonValue Value { get; set; }
 
 
         public JValue()
@@ -145,76 +146,162 @@ namespace JSON
 
         public override string ToString()
         {
-            return Value.ToString();
+            StringBuilder output = new StringBuilder();
+            String val = Value.ToString();
+
+
+            //this is the best I can do formatting wise.  The output is correct json, but I can't debug indents because the VS debug window handles indentation strangley
+            int tabCounter = 1;
+            bool doNothing = false;
+            foreach (char n in val)
+            {
+                output.Append(n);
+
+                if (n.Equals('{'))
+                {
+                    tabCounter++;
+                    output.Append("\n");
+                    for (int i = 0; i <= tabCounter; i++)
+                    {
+                        output.Append("\t");
+                    }
+                    doNothing = true;
+                }
+                else if (n.Equals('}'))
+                {
+                    tabCounter--;
+                    doNothing = false;
+                }
+                else if (n.Equals('['))
+                {
+                    tabCounter++;
+                }
+                else if (n.Equals(']'))
+                {
+                    tabCounter--;
+                }
+                
+                if (doNothing)
+                {
+                    if (n.Equals(','))
+                    {
+                        output.Append("\n");
+                        for (int i = 0; i <= tabCounter; i++)
+                        {
+                            output.Append("\t");
+                        }
+                    }
+                }
+            }
+            return output.ToString();
+
         }
 
-    }
 
 
-
-    internal class JsonValue
-    {
-    }
-
-    internal class JsonBool : JsonValue
-    {
-        public bool Value;
-
-        public override string ToString()
+        internal class JsonValue
         {
-            return Value.ToString();
         }
-    }
 
-    internal class JsonNumber : JsonValue
-    {
-        public double Value;
-
-        public override string ToString()
+        internal class JsonBool : JsonValue
         {
-            return Value.ToString();
+            public bool Value;
+
+            public override string ToString()
+            {
+                return Value.ToString();
+            }
         }
-    }
 
-    internal class JsonString : JsonValue
-    {
-        public string Value;
-
-        public override string ToString()
+        internal class JsonNumber : JsonValue
         {
-            return Value.ToString();
+            public double Value;
+
+            public override string ToString()
+            {
+                return Value.ToString();
+            }
         }
-    }
 
-    internal class JsonArray : JsonValue
-    {
-        public List<JValue> Values;
-
-        public override string ToString()
+        internal class JsonString : JsonValue
         {
-            return Values.ToString();
+            public string Value;
+
+            public override string ToString()
+            {
+                return Value.ToString();
+            }
         }
-    }
 
-    internal class JsonObject : JsonValue
-    {
-        public Dictionary<string, JValue> Values;
-
-        public override string ToString()
+        internal class JsonArray : JsonValue
         {
-            return Values.ToString();
+            public List<JValue> Values;
+
+            public override string ToString()
+            {
+                StringBuilder output = new StringBuilder();
+                foreach (JValue value in Values)
+                {
+                    output.Append("\"" + value.ToString() + "\",");
+
+                }
+                output.Length--;
+                return output.ToString();
+            }
         }
-    }
 
-    internal class JsonBlob : JsonValue
-    {
-        public Byte[] Value;
-
-        public override string ToString()
+        internal class JsonObject : JsonValue
         {
-            return System.Convert.ToBase64String(Value);
+            public Dictionary<string, JValue> Values;
+
+            public override string ToString()
+            {
+                StringBuilder output = new StringBuilder();
+                //output.Append("");
+                foreach (KeyValuePair<string, JValue> ThisValue in Values)
+                {
+                    output.Append("\"" + ThisValue.Key + "\":");
+                    if (ThisValue.Value.Value is JsonArray) //maybe not so A+ naming
+                    {
+                        output.Append("[" + ThisValue.Value.ToString() + "],");
+                    }
+                    else if (ThisValue.Value.Value is JsonObject)
+                    {
+                        output.Append("{" + ThisValue.Value.ToString() + "},");
+                    }
+                    else
+                    {
+                        output.Append("\"" + ThisValue.Value.ToString() + "\"" + ",");
+                    }
+
+
+                }
+                output.Length--;
+                return output.ToString();
+            }
         }
+
+        internal class JsonBlob : JsonValue
+        {
+            public Byte[] Value;
+
+            public override string ToString()
+            {
+                return System.Convert.ToBase64String(Value);
+            }
+        }
+
+        //internal class JFormatter
+        //{
+
+        //    string write(List<JValue> list)
+        //    {
+        //        foreach (value in list) {
+        //            write(value)
+        //        }
+        //    }
+        //}
+
+
     }
-
-
 }
